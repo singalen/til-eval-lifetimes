@@ -89,16 +89,27 @@ pub trait TalkObjectProxy<'world> {
 
 impl<'world> TalkObjectProxy<'world> for TalkObject<'world> {
     fn get(&mut self, name: &str) -> Option<&mut TalkValue<'world>> {
-        // Hack: allow undefined fields, in order to load scripts.
-        if !self.map.contains_key(name) {
-            self.map.insert(name.to_string(), TalkValue::new_obj());
+        match self.proxy.as_mut() {
+            Some(p) => p.get(name), // self.proxy.as_mut().unwrap()
+            None => {
+                // Hack: allow undefined fields, in order to load scripts.
+                if !self.map.contains_key(name) {
+                    self.map.insert(name.to_string(), TalkValue::new_obj());
+                }
+
+                self.map.get_mut(name)
+            }
         }
 
-        self.map.get_mut(name)
     }
 
     fn set(&mut self, name: &str, val: TalkValue<'world>) {
-        self.map.insert(name.to_string(), val);
+        match self.proxy.as_mut() {
+            Some(p) => p.set(name, val),
+            None => {
+                self.map.insert(name.to_string(), val);
+            }
+        }
     }
 
     fn is_empty(&self) -> bool { self.map.is_empty() }
@@ -152,7 +163,7 @@ impl<'world, 'ast: 'world> Eval<'world, 'ast> for Expression {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval::{Expression, TalkObject, Eval, TalkObjectProxy, TalkValue};
+    use crate::eval::{Expression, TalkObject, Eval, TalkObjectProxy, TalkValue, TalkEvalError};
 
     struct DummyProxy<'world> {
         value: TalkValue<'world>,
@@ -160,7 +171,7 @@ mod tests {
 
     impl<'world> DummyProxy<'world> {
         pub fn new() -> Self {
-            Self { value: TalkValue::Bool(true) }
+            Self { value: TalkValue::Int(42) }
         }
     }
 
@@ -177,14 +188,16 @@ mod tests {
     }
 
     #[test]
-    fn test_bool() {
+    fn test_bool() -> Result<(), TalkEvalError> {
         let mut context = TalkObject::new();
         let expr = Expression::Dummy;
 
         let mut dummy = DummyProxy::new();
         context.proxy = Some(&mut dummy);
 
-        let a = expr.eval(&mut context);
+        let a = expr.eval(&mut context)?;
         println!("{:?}", a);
+
+        Ok(())
     }
 }
