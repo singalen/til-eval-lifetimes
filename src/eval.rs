@@ -4,6 +4,7 @@ use std::ops::{DerefMut};
 
 use serde::{Serialize, Deserialize};
 
+/// Here 'world is the root object for all the in-game world.
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum TalkValue<'world> {
@@ -25,11 +26,11 @@ impl<'world> Debug for TalkValue<'world> {
 }
 
 impl<'world> TalkValue<'world> {
-    #[allow(dead_code)]
-    pub fn new_obj() -> Self { TalkValue::Object(Box::new(TalkObject::new())) }
-    pub fn new_str(s: &str) -> Self { TalkValue::String(s.to_string()) }
-    pub fn new_int(i: i64) -> Self { TalkValue::Int(i) }
+    #[allow(dead_code)] pub fn new_obj() -> Self { TalkValue::Object(Box::new(TalkObject::new())) }
+    #[allow(dead_code)] pub fn new_str(s: &str) -> Self { TalkValue::String(s.to_string()) }
+    #[allow(dead_code)] pub fn new_int(i: i64) -> Self { TalkValue::Int(i) }
 
+    #[allow(dead_code)]
     pub fn as_bool(&self) -> bool {
         match self {
             TalkValue::Int(i) => *i != 0,
@@ -39,6 +40,7 @@ impl<'world> TalkValue<'world> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn as_object(&mut self) -> Result<&mut TalkObject<'world>, TalkEvalError> {
         match self {
             TalkValue::Int(_) => Err(TalkEvalError::new("Object expected, got Int")),
@@ -48,6 +50,7 @@ impl<'world> TalkValue<'world> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn into_int(self) -> Result<i64, TalkEvalError> {
         match self {
             TalkValue::Int(i) => Ok(i),
@@ -162,12 +165,12 @@ mod tests {
     }
 
     impl<'world> TalkObjectProxy<'world> for DummyProxy<'world> {
-        fn get(&mut self, name: &str) -> Option<&mut TalkValue<'world>> {
+        fn get(&mut self, _name: &str) -> Option<&mut TalkValue<'world>> {
             println!("get()");
             Some(&mut self.value)
         }
 
-        fn set(&mut self, name: &str, val: TalkValue<'world>) {
+        fn set(&mut self, _name: &str, val: TalkValue<'world>) {
             println!("set()");
             self.value = val;
         }
@@ -182,5 +185,6 @@ mod tests {
         context.proxy = Some(&mut dummy);
 
         let a = expr.eval(&mut context);
+        println!("{:?}", a);
     }
 }
