@@ -156,7 +156,7 @@ impl<'world, 'ast: 'world> Eval<'world, 'ast> for Expression {
         //     Expression::OrTest { or_test } => or_test.eval(context),
         // }
         context
-            .get("42")
+            .get("43")
             .ok_or(TalkEvalError::new("oops"))
     }
 }
@@ -167,18 +167,23 @@ mod tests {
 
     struct DummyProxy<'world> {
         value: TalkValue<'world>,
+        value2: TalkValue<'world>,
     }
 
     impl<'world> DummyProxy<'world> {
         pub fn new() -> Self {
-            Self { value: TalkValue::Int(42) }
+            Self { value: TalkValue::Int(42), value2: TalkValue::Int(43) }
         }
     }
 
     impl<'world> TalkObjectProxy<'world> for DummyProxy<'world> {
-        fn get(&mut self, _name: &str) -> Option<&mut TalkValue<'world>> {
+        fn get(&mut self, name: &str) -> Option<&mut TalkValue<'world>> {
             println!("get()");
-            Some(&mut self.value)
+            if name == "42" {
+                Some(&mut self.value)
+            } else {
+                Some(&mut self.value2)
+            }
         }
 
         fn set(&mut self, _name: &str, val: TalkValue<'world>) {
